@@ -55,19 +55,12 @@ export type Changes = {
 	removals: { Ref | Instance },
 }
 
-export type LogSyncSettings = {
-	enabled: boolean,
-	targetFile: string,
-	-- filterPatterns: {string}? -- Optional, add if implementing client-side filtering
-}
-
 export type Project = {
 	name: string,
 	version: string,
 	gameId: number?,
 	placeIds: { number },
 	rootRefs: { Ref },
-	logSync: LogSyncSettings?, -- Add optional logSync settings
 }
 
 -- Messages

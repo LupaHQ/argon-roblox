@@ -135,45 +135,41 @@ function Core:run(): Promise.Promise
 		self.status = Core.Status.Connected
 		self.__ready(project)
 
-		-- Check log sync config from project details
-		if project.logSync and project.logSync.enabled then
-			Log.info("Log sync enabled by project config, starting listener.")
+		-- Log connection success for log sync
+		Log.info(`Argon connected for log sync to {self.client.host}:{self.client.port}, starting listener.`)
 
-			task.spawn(function()
-				self.client:sendLog(SESSION_START_MARKER):catch(function(err)
-					Log.warn("Failed to send log session start marker: {err}")
-				end)
+		task.spawn(function()
+			self.client:sendLog(SESSION_START_MARKER):catch(function(err)
+				Log.warn("Failed to send log session start marker: {err}")
 			end)
+		end)
 
-			local function handleMessageOut(message, messageType)
-				-- Only log if still connected
-				if self.status ~= Core.Status.Connected then
-					return
-				end
-
-				-- Basic filtering (TODO: Use config from project.logSync.filterPatterns if added)
-				local lowerMessage = string.lower(message)
-				if
-					string.find(lowerMessage, "argon:")
-					or string.find(lowerMessage, "log received")
-					or string.find(lowerMessage, "log session started")
-					or string.find(lowerMessage, "^s*$") -- Filter empty/whitespace lines
-					or string.find(lowerMessage, "http requests") -- Filter common HTTP noise
-				then
-					return
-				end
-
-				local formattedMessage =
-					string.format("[%s] [SERVER] %s (%s)", os.date("%H:%M:%S"), message, messageType.Name)
-				task.spawn(function()
-					self.client:sendLog(formattedMessage) -- Fire-and-forget logs
-				end)
+		local function handleMessageOut(message, messageType)
+			-- Only log if still connected
+			if self.status ~= Core.Status.Connected then
+				return
 			end
-			self.logServiceConnection = LogService.MessageOut:Connect(handleMessageOut)
-			Log.trace("Connected LogService.MessageOut for syncing.")
-		else
-			Log.info("Log sync disabled by project config.")
+
+			-- Basic filtering (TODO: Use config from project.logSync.filterPatterns if added)
+			local lowerMessage = string.lower(message)
+			if
+				string.find(lowerMessage, "argon:")
+				or string.find(lowerMessage, "log received")
+				or string.find(lowerMessage, "log session started")
+				or string.find(lowerMessage, "^s*$") -- Filter empty/whitespace lines
+				or string.find(lowerMessage, "http requests") -- Filter common HTTP noise
+			then
+				return
+			end
+
+			local formattedMessage =
+				string.format("[%s] [SERVER] %s (%s)", os.date("%H:%M:%S"), message, messageType.Name)
+			task.spawn(function()
+				self.client:sendLog(formattedMessage) -- Fire-and-forget logs
+			end)
 		end
+		self.logServiceConnection = LogService.MessageOut:Connect(handleMessageOut)
+		Log.trace("Connected LogService.MessageOut for syncing.")
 
 		Log.trace("Starting sync loops..")
 

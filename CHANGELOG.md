@@ -5,13 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), that adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
-[Unreleased]: https://github.com/LupaHQ/argon-roblox/compare/v2.1.1...HEAD
+[Unreleased]: https://github.com/LupaHQ/argon-roblox/compare/v2.1.2...HEAD
+
+## [v2.1.2] - 2024-04-03
+
+### Changed
+
+- Improved log message on successful connection for log sync.
 
 ## [v2.1.1] - 2024-04-03
 
 ### Fixed
 
 - No code changes, version bumped for release alignment.
+
+### Changed
+
+- Removed dependency on `logSync` configuration from server; syncing is now always active when connected.
 
 ## [v2.1.0] - 2024-04-03
 
@@ -272,6 +282,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - First Argon 2 plugin pre-release
 
+[v2.1.2]: https://github.com/LupaHQ/argon-roblox/compare/v2.1.1...v2.1.2
 [v2.1.1]: https://github.com/LupaHQ/argon-roblox/compare/v2.1.0...v2.1.1
 [v2.1.0]: https://github.com/LupaHQ/argon-roblox/compare/2.0.17...v2.1.0
 [2.0.17]: https://github.com/argon-rbx/argon-roblox/compare/2.0.16...2.0.17
