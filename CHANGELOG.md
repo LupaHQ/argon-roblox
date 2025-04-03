@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), that adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - YYYY-MM-DD
+
+### Added
+
+- **Roblox Log Syncing:** Added functionality to send server-side logs (`print`, `warn`, `error`) to the connected Argon server if the feature is enabled in the project configuration (`logSync.enabled`).
+
 ## [Unreleased]
 
 ### Added

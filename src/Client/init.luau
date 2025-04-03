@@ -127,6 +127,18 @@ function Client:write(changes: Types.Changes): Promise.Promise
 	})
 end
 
+function Client:sendLog(logMessage: string): Promise.Promise
+	Log.verbose("Client request: log")
+
+	local url = self:getUrl("log")
+
+	-- Http.post likely handles MessagePack encoding of the string payload
+	return Http.post(url, logMessage):catch(function(err)
+		Log.warn("Failed to send log message to server: {err}")
+		-- Don't reject the promise here, just log the error. Dropping logs is acceptable.
+	end)
+end
+
 function Client:open(instance: Types.Ref, line: number): Promise.Promise
 	Log.trace("Client request: open")
 

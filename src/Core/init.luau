@@ -1,4 +1,5 @@
 local ScriptEditorService = game:GetService("ScriptEditorService")
+local LogService = game:GetService("LogService")
 
 local Argon = script:FindFirstAncestor("Argon")
 
@@ -23,6 +24,8 @@ local Error = require(script.Error)
 local SYNCBACK_RATE = 0.5
 local SYNCBACK_DEBOUNCE = 0.01
 
+local SESSION_START_MARKER = "__ARGON_LOG_SESSION_START__"
+
 local Core = {
 	Status = {
 		Disconnected = 0,
@@ -41,6 +44,7 @@ function Core.new(host: string?, port: string?)
 	self.connections = {}
 	self.status = 0
 	self.lastSync = os.clock()
+	self.logServiceConnection = nil
 
 	self.tree = Tree.new()
 	self.client = Client.new(host or Config:get("Host"), port or Config:get("Port"))
@@ -131,6 +135,46 @@ function Core:run(): Promise.Promise
 		self.status = Core.Status.Connected
 		self.__ready(project)
 
+		-- Check log sync config from project details
+		if project.logSync and project.logSync.enabled then
+			Log.info("Log sync enabled by project config, starting listener.")
+
+			task.spawn(function()
+				self.client:sendLog(SESSION_START_MARKER):catch(function(err)
+					Log.warn("Failed to send log session start marker: {err}")
+				end)
+			end)
+
+			local function handleMessageOut(message, messageType)
+				-- Only log if still connected
+				if self.status ~= Core.Status.Connected then
+					return
+				end
+
+				-- Basic filtering (TODO: Use config from project.logSync.filterPatterns if added)
+				local lowerMessage = string.lower(message)
+				if
+					string.find(lowerMessage, "argon:")
+					or string.find(lowerMessage, "log received")
+					or string.find(lowerMessage, "log session started")
+					or string.find(lowerMessage, "^s*$") -- Filter empty/whitespace lines
+					or string.find(lowerMessage, "http requests") -- Filter common HTTP noise
+				then
+					return
+				end
+
+				local formattedMessage =
+					string.format("[%s] [SERVER] %s (%s)", os.date("%H:%M:%S"), message, messageType.Name)
+				task.spawn(function()
+					self.client:sendLog(formattedMessage) -- Fire-and-forget logs
+				end)
+			end
+			self.logServiceConnection = LogService.MessageOut:Connect(handleMessageOut)
+			Log.trace("Connected LogService.MessageOut for syncing.")
+		else
+			Log.info("Log sync disabled by project config.")
+		end
+
 		Log.trace("Starting sync loops..")
 
 		self:__startSyncbackLoop():catch(function(err)
@@ -147,6 +191,13 @@ function Core:stop()
 	self.status = Core.Status.Disconnecting
 
 	self.watcher:stop()
+
+	-- Disconnect LogService listener
+	if self.logServiceConnection then
+		Log.trace("Disconnecting LogService listener")
+		self.logServiceConnection:Disconnect()
+		self.logServiceConnection = nil
+	end
 
 	if self.client.isSubscribed then
 		task.spawn(function()
