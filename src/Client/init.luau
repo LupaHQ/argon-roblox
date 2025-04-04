@@ -7,7 +7,9 @@ local Place = require(Argon.Place)
 local Log = require(Argon.Log)
 
 local Http = require(script.Http)
-local Error = require(script.Error)
+print("Http module loaded:", Http, Http and Http.post) -- DEBUG
+
+local Error = require(script.Parent.Error)
 
 local function generateId(): number
 	return math.floor(math.random() * 10 ^ 9)
@@ -128,6 +130,7 @@ function Client:write(changes: Types.Changes): Promise.Promise
 end
 
 function Client:sendLog(logMessage: string): Promise.Promise
+	print("Inside sendLog, Http is:", Http, Http and Http.post) -- DEBUG
 	Log.verbose("Client request: log")
 
 	local url = self:getUrl("log")
