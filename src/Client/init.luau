@@ -9,7 +9,7 @@ local Log = require(Argon.Log)
 local Http = require(script.Http)
 print("Http module loaded:", Http, Http and Http.post) -- DEBUG
 
-local Error = require(script.Parent.Error)
+local Error = require(Argon.Error)
 
 local function generateId(): number
 	return math.floor(math.random() * 10 ^ 9)
