@@ -3,6 +3,11 @@ local TweenService = game:GetService("TweenService")
 
 local plugin = script:FindFirstAncestorWhichIsA("Plugin")
 
+print(
+	"[ARGON DEBUG] Hello from the past! Plugin version:",
+	require(script:FindFirstAncestor("Argon").manifest).package.version
+)
+
 local Argon = script:FindFirstAncestor("Argon")
 local Packages = Argon.Packages
 local Helpers = Argon.Helpers
