@@ -10,21 +10,6 @@ print(
 	require(script:FindFirstAncestor("Argon").manifest).package.version
 )
 
--- LemonLogs Integration
-local success, lemonLogs = pcall(function()
-	return require(game:GetService("ReplicatedStorage"):WaitForChild("LemonLogs", 2))
-end)
-
-if success and lemonLogs then
-	print("[ARGON] Found LemonLogs, enabling integration...")
-	lemonLogs.logToCloud(
-		"[ARGON] Plugin initialized with version: "
-			.. require(script:FindFirstAncestor("Argon").manifest).package.version
-	)
-else
-	print("[ARGON] LemonLogs not found, skipping cloud logging")
-end
-
 local Argon = script:FindFirstAncestor("Argon")
 local Packages = Argon.Packages
 local Helpers = Argon.Helpers
