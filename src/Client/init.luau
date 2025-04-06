@@ -127,6 +127,20 @@ function Client:write(changes: Types.Changes): Promise.Promise
 	})
 end
 
+function Client:sendLog(logData: { timestamp: number, message: string, type: string }): Promise.Promise
+	Log.trace("Client request: log")
+
+	local url = self:getUrl("log")
+
+	-- Use Http.post, assuming it handles MsgPack encoding
+	return Http.post(url, {
+		clientId = self.clientId, -- Include clientId for potential future use/filtering
+		timestamp = logData.timestamp,
+		message = logData.message,
+		type = logData.type,
+	})
+end
+
 function Client:open(instance: Types.Ref, line: number): Promise.Promise
 	Log.trace("Client request: open")
 

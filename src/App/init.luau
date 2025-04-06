@@ -1,5 +1,7 @@
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
+local HttpService = game:GetService("HttpService")
+local LogService = game:GetService("LogService")
 
 local plugin = script:FindFirstAncestorWhichIsA("Plugin")
 
@@ -7,6 +9,21 @@ print(
 	"[ARGON DEBUG] Hello from the past! Plugin version:",
 	require(script:FindFirstAncestor("Argon").manifest).package.version
 )
+
+-- LemonLogs Integration
+local success, lemonLogs = pcall(function()
+	return require(game:GetService("ReplicatedStorage"):WaitForChild("LemonLogs", 2))
+end)
+
+if success and lemonLogs then
+	print("[ARGON] Found LemonLogs, enabling integration...")
+	lemonLogs.logToCloud(
+		"[ARGON] Plugin initialized with version: "
+			.. require(script:FindFirstAncestor("Argon").manifest).package.version
+	)
+else
+	print("[ARGON] LemonLogs not found, skipping cloud logging")
+end
 
 local Argon = script:FindFirstAncestor("Argon")
 local Packages = Argon.Packages
@@ -17,6 +34,7 @@ local Widgets = script.Widgets
 local Pages = script.Pages
 
 local Fusion = require(Packages.Fusion)
+local Value = Fusion.Value
 local Signal = require(Packages.Signal)
 
 local manifest = require(Argon.manifest)
@@ -49,7 +67,6 @@ local Settings = require(Widgets.Settings)
 local Help = require(Widgets.Help)
 
 local New = Fusion.New
-local Value = Fusion.Value
 local Spring = Fusion.Spring
 local OnEvent = Fusion.OnEvent
 local OnChange = Fusion.OnChange
@@ -59,10 +76,34 @@ local Children = Fusion.Children
 local cleanup = Fusion.cleanup
 local peek = Fusion.peek
 
-local RECONNECT_INTERVAL = 5
+-- local RECONNECT_INTERVAL = Config:get("ReconnectInterval") or 5 -- Removed incorrect config get
 
 local App = {}
 App.__index = App
+
+-- Logging method
+function App:sendLog(message: string, level: string?)
+	-- Only send if connected to the server and core exists
+	if not peek(self.isServerConnected) or not self.core or not self.core.client then
+		return
+	end
+
+	local logData = {
+		timestamp = os.time(),
+		message = message,
+		type = level or "INFO",
+	}
+
+	-- Call the new method on the client object
+	-- Use Promise:Catch to handle potential errors without spamming
+	self.core.client:sendLog(logData):catch(function(err)
+		-- Only log the error once if connection seems lost
+		if peek(self.isServerConnected) then
+			self.isServerConnected:set(false) -- Assume disconnected on send error
+			warn("[ARGON] Failed to send log via Core Client:", err)
+		end
+	end)
+end
 
 function App.new()
 	Loader.load()
@@ -73,8 +114,9 @@ function App.new()
 	self.lastUpdate = os.clock()
 	self.onCanceled = Signal.new()
 
-	self.host = Config:get("Host")
-	self.port = Config:get("Port")
+	self.host = Config:get("Host") or "localhost"
+	self.port = Config:get("Port") or 8000 -- Correct default port
+	self.isServerConnected = Value(false) -- Add connection state
 
 	self.lastSync = Value(os.time())
 	self.lastSyncKind = Value("Unknown")
@@ -131,6 +173,17 @@ function App.new()
 	else
 		self:setPage(Unavailable())
 	end
+
+	-- Setup log listener here to access self
+	LogService.MessageOut:Connect(function(message, messageType)
+		if messageType == Enum.MessageType.MessageOutput then
+			self:sendLog(message, "INFO")
+		elseif messageType == Enum.MessageType.MessageWarning then
+			self:sendLog(message, "WARN")
+		elseif messageType == Enum.MessageType.MessageError then
+			self:sendLog(message, "ERROR")
+		end
+	end)
 
 	return self
 end
@@ -303,6 +356,7 @@ function App:connect()
 	local canceled = false
 	local loading = true
 
+	self:sendLog(string.format("[ARGON] Attempting to connect to server at %s:%d...", self.host, self.port), "INFO") -- This log won't send yet
 	self.core = Core.new(self.host, self.port)
 
 	task.spawn(function()
@@ -379,8 +433,10 @@ function App:connect()
 		project:set(projectDetails)
 
 		self.lastSync:set(os.time())
-
 		self.lastSyncKind:set(Config:get("InitialSyncPriority"))
+
+		self.isServerConnected:set(true) -- <<< SET CONNECTED STATE HERE
+		self:sendLog("[ARGON] Successfully connected to server and initialized project", "INFO")
 
 		self:setPage(Connected {
 			App = self,
@@ -398,19 +454,26 @@ function App:connect()
 				or "None"
 		)
 
+		self:sendLog(string.format("[ARGON] Sync event: %s", kind), "INFO")
+
 		if kind == "SyncDetails" then
 			project:set(data)
+			self:sendLog("[ARGON] Project details updated from sync", "INFO")
 		end
 	end)
 
 	self.core:run():catch(function(err)
 		loading = false
+		self.isServerConnected:set(false) -- <<< SET DISCONNECTED STATE HERE
 
 		if Core.wasExitGraceful(err) or canceled then
-			self:disconnect()
+			self:sendLog("[ARGON] Connection closed gracefully", "INFO") -- This won't send
+			self:disconnect() -- disconnect already sets state to false
 			self:home()
 			return
 		end
+
+		self:sendLog(string.format("[ARGON] Connection error: %s", err.message or tostring(err)), "ERROR") -- This won't send
 
 		self:setPage(Error {
 			App = self,
@@ -419,12 +482,13 @@ function App:connect()
 
 		self:setIcon("Error")
 
-		self:disconnect()
+		self:disconnect() -- disconnect already sets state to false
 
 		if Config:get("AutoReconnect") then
-			task.wait(RECONNECT_INTERVAL)
+			task.wait(5) -- Using hardcoded 5 for now, maybe make this configurable?
 
-			if self.lastUpdate + RECONNECT_INTERVAL <= os.clock() then
+			if self.lastUpdate + 5 <= os.clock() then
+				self:sendLog("[ARGON] Attempting to reconnect...", "INFO") -- This won't send
 				self:connect()
 			end
 		end
@@ -433,10 +497,14 @@ end
 
 function App:disconnect(cancel: boolean?)
 	self.lastUpdate = os.clock()
+	self.isServerConnected:set(false) -- <<< SET DISCONNECTED STATE HERE
 
 	if self.core then
 		if cancel then
 			self.onCanceled:Fire()
+			self:sendLog("[ARGON] Connection canceled by user", "INFO") -- This won't send
+		else
+			self:sendLog("[ARGON] Disconnecting from server", "INFO") -- This won't send
 		end
 
 		self.core:stop()

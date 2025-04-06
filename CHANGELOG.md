@@ -20,6 +20,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - MeshPart's MeshId property is now properly applied when connecting for the first time
 - Improper instance class changes no longer cause a crash
 
+## [2.0.24] - YYYY-MM-DD
+
+### Added
+
+- Integrated logging system that sends Studio Output messages (only while game is running) to the Argon CLI.
+- Logs are written to `lemonlogs.txt` in the project root.
+- `lemonlogs.txt` is automatically cleared at the start of each new run session.
+
 ## [2.0.18] - 2024-04-04
 
 ### Added
