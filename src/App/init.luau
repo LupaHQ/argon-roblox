@@ -107,7 +107,7 @@ function App.new()
 	self.lastSyncKind = Value("Unknown")
 
 	self.rootSize = Value(Vector2.new(300, 200))
-	self.icon = Value(Assets.Argon.Logo)
+	self.icon = Value(Assets.Lemonade.Logo)
 	self.pages = Value({})
 
 	self.settingsWidget = Value(nil)
@@ -119,8 +119,8 @@ function App.new()
 		Toolbar = Toolbar {
 			Name = "Dervex Tools",
 		},
-		Name = "Argon",
-		ToolTip = "Open Argon UI",
+		Name = "Lemonade",
+		ToolTip = "Open Lemonade UI",
 		Image = self.icon,
 
 		[OnEvent "Click"] = function()
@@ -129,7 +129,7 @@ function App.new()
 	}
 
 	Widget {
-		Name = "Argon",
+		Name = "Lemonade",
 		MinimumSize = peek(self.rootSize),
 		Enabled = isOpen,
 
@@ -175,13 +175,13 @@ end
 
 function App:setIcon(icon: ("Ok" | "Warn" | "Error")?)
 	if icon == "Ok" then
-		self.icon:set(Assets.Argon.LogoOk)
+		self.icon:set(Assets.Lemonade.LogoOk)
 	elseif icon == "Warn" then
-		self.icon:set(Assets.Argon.LogoWarn)
+		self.icon:set(Assets.Lemonade.LogoWarn)
 	elseif icon == "Error" then
-		self.icon:set(Assets.Argon.LogoError)
+		self.icon:set(Assets.Lemonade.LogoError)
 	else
-		self.icon:set(Assets.Argon.Logo)
+		self.icon:set(Assets.Lemonade.Logo)
 	end
 end
 
@@ -224,8 +224,8 @@ function App:setPage(page)
 					[Children] = {
 						Image {
 							Size = UDim2.fromOffset(155, 35),
-							Image = Assets.Argon.Banner,
-							ImageColor3 = Theme.Colors.Brand,
+							Image = Assets.Lemonade.Banner,
+							ImageColor3 = Theme.Colors.Text,
 						},
 						Text {
 							AnchorPoint = Vector2.new(1, 1),
