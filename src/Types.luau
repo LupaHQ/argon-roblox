@@ -84,4 +84,14 @@ export type Disconnect = {
 	message: string,
 }
 
+export type LogData = {
+	timestamp: number,
+	message: string,
+	type: string,
+}
+
+export type GameStartedEvent = {
+	clientId: number,
+}
+
 return nil

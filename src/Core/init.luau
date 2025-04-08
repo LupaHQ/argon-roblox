@@ -1,4 +1,5 @@
 local ScriptEditorService = game:GetService("ScriptEditorService")
+local RunService = game:GetService("RunService")
 
 local Argon = script:FindFirstAncestor("Argon")
 
@@ -132,6 +133,95 @@ function Core:run(): Promise.Promise
 		self.__ready(project)
 
 		Log.trace("Starting sync loops..")
+
+		-- Set up run state detection with the most reliable approach
+		Log.info("[GameStartDetection] Setting up game start detection...")
+
+		-- Initial diagnostic
+		Log.warn(
+			"[DEBUG] Initial RunService state - IsRunning: "
+				.. tostring(RunService:IsRunning())
+				.. ", IsStudio: "
+				.. tostring(RunService:IsStudio())
+				.. ", IsServer: "
+				.. tostring(RunService:IsServer())
+		)
+
+		-- Create a script to run in the server context
+		-- This is important because plugin scripts run in a separate context that may not get the proper RunService events
+		local serverDetectionScript = Instance.new("Script")
+		serverDetectionScript.Name = "GameStartDetector"
+
+		-- This script will fire a BindableEvent when the game starts running
+		local gameStartedEvent = Instance.new("BindableEvent")
+		gameStartedEvent.Name = "GameStartedEvent"
+		gameStartedEvent.Parent = serverDetectionScript
+
+		-- Set up the code for the server script
+		serverDetectionScript.Source = [[
+			local RunService = game:GetService("RunService")
+			local gameStartedEvent = script:WaitForChild("GameStartedEvent")
+			local sentNotification = false
+			
+			-- Most reliable way to detect game running - Heartbeat only fires when game is running
+			RunService.Heartbeat:Connect(function()
+				if not sentNotification then
+					task.wait(0.5) -- Small delay to ensure we're truly running
+					sentNotification = true
+					print("[GAME START DETECTOR] Game is running, firing event...")
+					gameStartedEvent:Fire()
+				end
+			end)
+		]]
+
+		serverDetectionScript.Parent = game:GetService("ServerScriptService")
+
+		-- Connect to the event
+		gameStartedEvent.Event:Connect(function()
+			Log.warn(
+				"[DEBUG] 🎮 Game start detected via server script's BindableEvent. Marker log should have been sent."
+			)
+		end)
+
+		-- Also try direct RunState monitoring as backup (remove send event call)
+		local runStateConnection = RunService:GetPropertyChangedSignal("RunState"):Connect(function()
+			if self.status ~= Core.Status.Connected then
+				return
+			end
+
+			Log.warn("[DEBUG] 🔄 RunState changed to: " .. tostring(RunService.RunState))
+		end)
+
+		-- Cleanup function
+		local function cleanupDetection()
+			if serverDetectionScript and serverDetectionScript.Parent then
+				serverDetectionScript:Destroy()
+			end
+		end
+
+		-- Add to connections for cleanup
+		table.insert(self.connections, {
+			Disconnect = cleanupDetection,
+		})
+		table.insert(self.connections, runStateConnection)
+
+		-- Debug loop to periodically log status
+		local debugConnection = task.spawn(function()
+			while self.status == Core.Status.Connected do
+				task.wait(5) -- Check every 5 seconds
+				Log.debug(
+					"[GameStartDetection] Status: hasStarted="
+						.. tostring(alreadySentGameStarted)
+						.. ", isRunning="
+						.. tostring(RunService:IsRunning())
+				)
+			end
+		end)
+		table.insert(self.connections, {
+			Disconnect = function()
+				task.cancel(debugConnection)
+			end,
+		})
 
 		self:__startSyncbackLoop():catch(function(err)
 			return reject(err)
