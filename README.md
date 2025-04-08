@@ -1,6 +1,6 @@
 <div align='center'>
   <img alt='Argon' src='https://raw.githubusercontent.com/argon-rbx/argon-assets/main/argon_banner.png'>
-  <b>Full featured tool for Roblox development</b>
+  <b>Roblox AI code generation tool</b>
 </div>
 
 # Argon Roblox
