@@ -3,7 +3,8 @@ local Argon = script:FindFirstAncestor("Argon")
 
 local Util = require(Argon.Util)
 
-local LogService = game:GetService("LogService")
+-- Removing unused service
+-- local LogService = game:GetService("LogService")
 
 local App -- Forward declare App
 

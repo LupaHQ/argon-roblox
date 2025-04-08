@@ -1,5 +1,5 @@
 --!strict
-local RunService = game:GetService("RunService")
+-- local RunService = game:GetService("RunService")
 local LogService = game:GetService("LogService")
 
 --[[ -- REMOVED THIS BLOCK TO ALLOW UI INITIALIZATION DURING RUNTIME
@@ -42,8 +42,9 @@ Config.load()
 Log.debug("[ARGON DEBUG] Initializing plugin... Version: 2.0.25")
 Log.__setLevel(Config:get("LogLevel"))
 
--- Initialize the App (UI) - This will handle IsRunning() internally
-local appInstance = App.new()
+-- Initialize the App (UI) and store it in the App.current global
+App.new()
+-- local appInstance = App.new()  -- No need to store the instance locally if not used
 
 -- Set up log forwarding AFTER App.new() is called so App.current exists
 LogService.MessageOut:Connect(function(message, messageType)
@@ -55,16 +56,19 @@ LogService.MessageOut:Connect(function(message, messageType)
 	-- Check if App and App.current are valid before trying to send logs
 	if App and App.current and App.current.sendLog then
 		local logLevel = "INFO"
-		if messageType == Enum.MessageType.Warning then
+		-- Use direct value comparisons instead of enum
+		-- Warning = 1, Error = 2, Output = 0
+		if messageType.Value == 1 then -- Warning
 			logLevel = "WARN"
-		elseif messageType == Enum.MessageType.Error then
+		elseif messageType.Value == 2 then -- Error
 			logLevel = "ERROR"
 		end
 		App.current:sendLog(message, logLevel)
 	else
-		-- Fallback if app isn't ready (shouldn't happen often)
-		-- No need to print fallback here, as filtering should catch most noise
-		-- print("[LOG FALLBACK] App not ready for: " .. message)
+		-- Add a simple action in the else block to avoid empty else warning
+		if Log.__level >= 5 then -- Only in trace mode
+			print("[LOG_TRACE] App not ready for message: " .. message:sub(1, 30) .. "...")
+		end
 	end
 end)
 

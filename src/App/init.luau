@@ -1,6 +1,5 @@
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
-local HttpService = game:GetService("HttpService")
 local LogService = game:GetService("LogService")
 
 local plugin = script:FindFirstAncestorWhichIsA("Plugin")

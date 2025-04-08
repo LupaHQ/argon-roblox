@@ -15,6 +15,14 @@ local ALL_FACES = { "Right", "Top", "Back", "Left", "Bottom", "Front" }
 
 local EncodedValue = {}
 
+-- Define Content properly as a custom object with needed methods
+local Content = {
+	none = { SourceType = Enum.ContentSourceType.None },
+	fromUri = function(uri)
+		return { SourceType = Enum.ContentSourceType.Uri, Uri = uri }
+	end,
+}
+
 local types
 types = {
 	Attributes = {

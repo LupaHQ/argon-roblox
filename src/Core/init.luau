@@ -199,13 +199,10 @@ function Core:run(): Promise.Promise
 			end
 		end
 
-		-- Add to connections for cleanup
-		table.insert(self.connections, {
-			Disconnect = cleanupDetection,
-		})
-		table.insert(self.connections, runStateConnection)
+		-- Variable to track game start state
+		local alreadySentGameStarted = false
 
-		-- Debug loop to periodically log status
+		-- Diagnostic monitoring thread
 		local debugConnection = task.spawn(function()
 			while self.status == Core.Status.Connected do
 				task.wait(5) -- Check every 5 seconds
@@ -217,6 +214,12 @@ function Core:run(): Promise.Promise
 				)
 			end
 		end)
+
+		-- Add to connections for cleanup
+		table.insert(self.connections, {
+			Disconnect = cleanupDetection,
+		})
+		table.insert(self.connections, runStateConnection)
 		table.insert(self.connections, {
 			Disconnect = function()
 				task.cancel(debugConnection)
