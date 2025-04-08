@@ -332,7 +332,7 @@ return function(props: Props): DockWidgetPluginGui
 	local bindings = {}
 
 	return Widget {
-		Name = "Argon - Settings",
+		Name = "Lemonade - Settings",
 		OverrideEnabled = true,
 		MinimumSize = Vector2.new(350, 400),
 		Closed = props.Closed,

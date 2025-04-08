@@ -19,8 +19,8 @@ local function getColors(isDark: boolean): { [string]: { Color3 | { [string]: Co
 	border = Color3.fromHSV(h, s, v * (isDark and 1.2 or 0.85))
 
 	return {
-		-- It's actually 130, 120, 230
-		Brand = Color3.fromRGB(120, 110, 220),
+		-- Changed from purple (120, 110, 220) to yellow (232, 232, 42) for Lemonade branding
+		Brand = Color3.fromRGB(186, 186, 17),
 
 		Background = background,
 		ActiveBackground = Studio.Theme:GetColor(Enum.StudioStyleGuideColor.Titlebar),
