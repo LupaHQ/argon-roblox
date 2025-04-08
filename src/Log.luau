@@ -3,6 +3,37 @@ local Argon = script:FindFirstAncestor("Argon")
 
 local Util = require(Argon.Util)
 
+local LogService = game:GetService("LogService")
+
+local App -- Forward declare App
+
+local FILTERED_MESSAGES = {
+	"logstreamer", -- Example, adapt based on your needs
+	"messageout captured",
+	"log received successfully",
+	"session_start",
+	"http requests can only be executed by game server",
+	"failed to send to server",
+	"http requests are disabled in studio",
+	"server response:",
+	"logstreamer script loaded",
+	"logstreamer setup complete",
+	"log fallback", -- Filter our own fallback message
+	"game start detection", -- Filter internal detection logs
+	"game started event", -- Filter event sending logs
+	"clear logs request", -- Filter event sending logs
+	"argon log", -- Filter our other fallback
+	"successfully built project", -- Filter build messages
+	"successfully connected to server", -- Common Argon log
+	"runservice state", -- Filter debug logs
+	"plugin initialized", -- Filter init logs
+	"initializing plugin", -- Filter init logs
+	"log clear success", -- Matches the success message tag
+	"log clear failed", -- Matches the failure message tag
+	"game start detected", -- Matches the detection message
+	"[debug]", -- Catch common debug prefixes
+}
+
 local function format(...: any): string
 	local args = ""
 
@@ -62,6 +93,42 @@ end
 function Log.error(...: any)
 	if Log.__level >= Log.Level.Error then
 		error("ERROR:" .. format(...), 0)
+	end
+end
+
+-- Function to check if a message should be filtered
+function Log.shouldFilterMessage(message: string): boolean
+	message = message:lower()
+	for _, filter in ipairs(FILTERED_MESSAGES) do
+		if message:find(filter:lower()) then
+			return true
+		end
+	end
+	return false
+end
+
+-- Direct log sending function that bypasses UI for running mode
+function Log.__sendLog(message: string, level: string)
+	if Log.shouldFilterMessage(message) then
+		return
+	end -- Filter here too
+
+	if not App or not App.current then
+		-- Print to output if App is not available
+		print("[ARGON LOG] " .. message)
+		return
+	end
+
+	local client = App.current.client
+
+	if client then
+		client
+			:sendLog({
+				timestamp = os.time(),
+				message = message,
+				type = level,
+			})
+			:catch(function() end)
 	end
 end
 
