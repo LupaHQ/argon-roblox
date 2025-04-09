@@ -147,6 +147,13 @@ function Core:run(): Promise.Promise
 				.. tostring(RunService:IsServer())
 		)
 
+		-- Check if a detector script already exists and remove it
+		local existingScript = game:GetService("ServerScriptService"):FindFirstChild("GameStartDetector")
+		if existingScript then
+			Log.warn("[GameStartDetection] Found existing detector script, removing it first")
+			existingScript:Destroy()
+		end
+
 		-- Create a script to run in the server context
 		-- This is important because plugin scripts run in a separate context that may not get the proper RunService events
 		local serverDetectionScript = Instance.new("Script")
@@ -162,14 +169,24 @@ function Core:run(): Promise.Promise
 			local RunService = game:GetService("RunService")
 			local gameStartedEvent = script:WaitForChild("GameStartedEvent")
 			local sentNotification = false
+			local heartbeatConnection
 			
 			-- Most reliable way to detect game running - Heartbeat only fires when game is running
-			RunService.Heartbeat:Connect(function()
+			heartbeatConnection = RunService.Heartbeat:Connect(function()
 				if not sentNotification then
 					task.wait(0.5) -- Small delay to ensure we're truly running
 					sentNotification = true
 					print("[GAME START DETECTOR] Game is running, firing event...")
 					gameStartedEvent:Fire()
+					-- Disconnect after firing to prevent multiple events
+					heartbeatConnection:Disconnect()
+				end
+			end)
+
+			-- Clean up connection when script is destroyed
+			script.Destroying:Connect(function()
+				if heartbeatConnection then
+					heartbeatConnection:Disconnect()
 				end
 			end)
 		]]
@@ -177,10 +194,18 @@ function Core:run(): Promise.Promise
 		serverDetectionScript.Parent = game:GetService("ServerScriptService")
 
 		-- Connect to the event
-		gameStartedEvent.Event:Connect(function()
+		local eventConnection = gameStartedEvent.Event:Connect(function()
 			Log.warn(
 				"[DEBUG] 🎮 Game start detected via server script's BindableEvent. Marker log should have been sent."
 			)
+
+			-- Send the game started event to the server
+			if not alreadySentGameStarted then
+				alreadySentGameStarted = true
+				self.client:sendGameStartedEvent():catch(function(err)
+					Log.warn("[DEBUG] ❌ Failed to send game started event:", err)
+				end)
+			end
 		end)
 
 		-- Also try direct RunState monitoring as backup (remove send event call)
@@ -196,6 +221,9 @@ function Core:run(): Promise.Promise
 		local function cleanupDetection()
 			if serverDetectionScript and serverDetectionScript.Parent then
 				serverDetectionScript:Destroy()
+			end
+			if eventConnection then
+				eventConnection:Disconnect()
 			end
 		end
 
