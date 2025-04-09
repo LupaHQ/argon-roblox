@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [0.0.2] - 2025-04-09
 
+## [0.0.2] - 2025-04-09
+
 ### Changed
 
 - Two-way sync is now enabled by default
@@ -284,7 +286,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - First Argon 2 plugin pre-release
 
-[unreleased]: https://github.com/LupaHQ/argon-roblox/compare/0.0.1...HEAD
+[unreleased]: https://github.com/LupaHQ/argon-roblox/compare/v0.0.2...HEAD
+[0.0.2]: https://github.com/LupaHQ/argon-roblox/compare/0.0.1...v0.0.2
 [0.0.1]: https://github.com/LupaHQ/argon-roblox/compare/2.0.17...0.0.1
 [2.0.17]: https://github.com/argon-rbx/argon-roblox/compare/2.0.16...2.0.17
 [2.0.16]: https://github.com/argon-rbx/argon-roblox/compare/2.0.15...2.0.16
