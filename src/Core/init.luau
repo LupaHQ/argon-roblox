@@ -42,6 +42,7 @@ function Core.new(host: string?, port: string?)
 	self.connections = {}
 	self.status = 0
 	self.lastSync = os.clock()
+	self.alreadySentGameStarted = false
 
 	self.tree = Tree.new()
 	self.client = Client.new(host or Config:get("Host"), port or Config:get("Port"))
@@ -83,6 +84,7 @@ end
 function Core:run(): Promise.Promise
 	return Promise.new(function(_, reject)
 		self.status = Core.Status.Connecting
+		self.alreadySentGameStarted = false
 
 		local initialSyncPriority = Config:get("InitialSyncPriority")
 
@@ -200,10 +202,11 @@ function Core:run(): Promise.Promise
 			)
 
 			-- Send the game started event to the server
-			if not alreadySentGameStarted then
-				alreadySentGameStarted = true
+			if not self.alreadySentGameStarted then
+				self.alreadySentGameStarted = true
 				self.client:sendGameStartedEvent():catch(function(err)
 					Log.warn("[DEBUG] ❌ Failed to send game started event:", err)
+					self.alreadySentGameStarted = false
 				end)
 			end
 		end)
@@ -215,6 +218,16 @@ function Core:run(): Promise.Promise
 			end
 
 			Log.warn("[DEBUG] 🔄 RunState changed to: " .. tostring(RunService.RunState))
+
+			-- Check if we should try sending the event again
+			if RunService:IsRunning() and not self.alreadySentGameStarted then
+				Log.warn("[DEBUG] 🔄 Game is now running, attempting to send game started event...")
+				self.alreadySentGameStarted = true
+				self.client:sendGameStartedEvent():catch(function(err)
+					Log.warn("[DEBUG] ❌ Failed to send game started event:", err)
+					self.alreadySentGameStarted = false
+				end)
+			end
 		end)
 
 		-- Cleanup function
@@ -225,10 +238,11 @@ function Core:run(): Promise.Promise
 			if eventConnection then
 				eventConnection:Disconnect()
 			end
+			self.alreadySentGameStarted = false
 		end
 
 		-- Variable to track game start state
-		local alreadySentGameStarted = false
+		-- local alreadySentGameStarted = false -- Remove this local declaration
 
 		-- Diagnostic monitoring thread
 		local debugConnection = task.spawn(function()
@@ -236,7 +250,7 @@ function Core:run(): Promise.Promise
 				task.wait(5) -- Check every 5 seconds
 				Log.debug(
 					"[GameStartDetection] Status: hasStarted="
-						.. tostring(alreadySentGameStarted)
+						.. tostring(self.alreadySentGameStarted)
 						.. ", isRunning="
 						.. tostring(RunService:IsRunning())
 				)
