@@ -82,6 +82,7 @@ function Core.new(host: string?, port: string?)
 end
 
 function Core:run(): Promise.Promise
+	Log.warn("--- Core:run START ---") -- Log start of run
 	return Promise.new(function(_, reject)
 		self.status = Core.Status.Connecting
 		self.alreadySentGameStarted = false
@@ -150,7 +151,9 @@ function Core:run(): Promise.Promise
 		)
 
 		-- Check if a detector script already exists and remove it
+		Log.warn("[GameStartDetection] Checking for existing detector script...") -- Log check
 		local existingScript = game:GetService("ServerScriptService"):FindFirstChild("GameStartDetector")
+		Log.warn("[GameStartDetection] FindFirstChild result:", existingScript) -- Log result
 		if existingScript then
 			Log.warn("[GameStartDetection] Found existing detector script, removing it first")
 			existingScript:Destroy()
@@ -169,28 +172,78 @@ function Core:run(): Promise.Promise
 		-- Set up the code for the server script
 		serverDetectionScript.Source = [[
 			local RunService = game:GetService("RunService")
+			local ServerStorage = game:GetService("ServerStorage")
 			local gameStartedEvent = script:WaitForChild("GameStartedEvent")
-			local sentNotification = false
-			local heartbeatConnection
 			
-			-- Most reliable way to detect game running - Heartbeat only fires when game is running
-			heartbeatConnection = RunService.Heartbeat:Connect(function()
-				if not sentNotification then
-					task.wait(0.5) -- Small delay to ensure we're truly running
-					sentNotification = true
-					print("[GAME START DETECTOR] Game is running, firing event...")
-					gameStartedEvent:Fire()
-					-- Disconnect after firing to prevent multiple events
-					heartbeatConnection:Disconnect()
+			local FLAG_NAME = "_ARGON_GAME_START_RUNNING"
+			local cleanupConnection -- Forward declare
+
+			-- Function to clean up the flag and connections
+			local function cleanup()
+				print("[GAME START DETECTOR SCRIPT] Cleanup called.")
+				local flag = ServerStorage:FindFirstChild(FLAG_NAME)
+				if flag then
+					print("[GAME START DETECTOR SCRIPT] Destroying flag.")
+					flag:Destroy()
+				end
+				if cleanupConnection then
+					cleanupConnection:Disconnect()
+					cleanupConnection = nil
+				end
+			end
+
+			-- Singleton Check
+			if ServerStorage:FindFirstChild(FLAG_NAME) then
+				print("[GAME START DETECTOR SCRIPT] Another detector is already running (flag exists). Exiting script.")
+				script:Destroy() -- Destroy this redundant script instance
+				return
+			end
+
+			-- Create and set the flag
+			print("[GAME START DETECTOR SCRIPT] Creating singleton flag.")
+			local runningFlag = Instance.new("BoolValue")
+			runningFlag.Name = FLAG_NAME
+			runningFlag.Parent = ServerStorage
+
+			local sentNotification = false
+			local simConnection
+			
+			print("[GAME START DETECTOR SCRIPT] Initializing detection using PreSimulation. sentNotification=", sentNotification)
+
+			-- Use PreSimulation
+			simConnection = RunService.PreSimulation:Connect(function()
+				if sentNotification then 
+					-- Already fired, disconnect if somehow still connected
+					if simConnection then simConnection:Disconnect() simConnection = nil cleanup() end 
+					return 
+				end
+
+				task.wait(0.5) 
+				print("[GAME START DETECTOR SCRIPT] Waited 0.5s. Setting sentNotification=true")
+				sentNotification = true
+				print("[GAME START DETECTOR SCRIPT] Game is running, firing event...")
+				gameStartedEvent:Fire()
+				
+				-- Disconnect and cleanup *after* firing
+				if simConnection then
+					print("[GAME START DETECTOR SCRIPT] Disconnecting PreSimulation connection after fire.")
+					simConnection:Disconnect()
+					simConnection = nil
+					cleanup() -- Explicitly call cleanup after firing
 				end
 			end)
 
-			-- Clean up connection when script is destroyed
-			script.Destroying:Connect(function()
-				if heartbeatConnection then
-					heartbeatConnection:Disconnect()
+			-- Clean up when script is destroyed
+			cleanupConnection = script.Destroying:Connect(function()
+				print("[GAME START DETECTOR SCRIPT] Destroying event triggered. Cleaning up...")
+				if simConnection then
+					simConnection:Disconnect()
+					simConnection = nil
 				end
+				cleanup() -- Call cleanup on destroy
 			end)
+
+			print("[GAME START DETECTOR SCRIPT] Detection setup complete.")
 		]]
 
 		serverDetectionScript.Parent = game:GetService("ServerScriptService")
@@ -232,12 +285,23 @@ function Core:run(): Promise.Promise
 
 		-- Cleanup function
 		local function cleanupDetection()
+			Log.warn("--- cleanupDetection CALLED ---") -- Log cleanup call
 			if serverDetectionScript and serverDetectionScript.Parent then
+				Log.warn("[GameStartDetection] cleanup: Destroying serverDetectionScript:", serverDetectionScript)
 				serverDetectionScript:Destroy()
 			end
 			if eventConnection then
+				Log.warn("[GameStartDetection] cleanup: Disconnecting eventConnection:", eventConnection)
 				eventConnection:Disconnect()
 			end
+
+			-- Failsafe: Remove the singleton flag if it exists
+			local flag = game:GetService("ServerStorage"):FindFirstChild("_ARGON_GAME_START_RUNNING")
+			if flag then
+				Log.warn("[GameStartDetection] cleanup: Failsafe - Removing singleton flag:", flag)
+				flag:Destroy()
+			end
+
 			self.alreadySentGameStarted = false
 		end
 
@@ -277,6 +341,7 @@ function Core:run(): Promise.Promise
 end
 
 function Core:stop()
+	Log.warn("--- Core:stop CALLED ---") -- Log stop call
 	Log.trace("Stopping Argon core..")
 
 	self.status = Core.Status.Disconnecting
