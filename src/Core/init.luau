@@ -164,6 +164,7 @@ function Core:run(): Promise.Promise
 			
 			local FLAG_NAME = "_ARGON_GAME_START_RUNNING"
 			local cleanupConnection -- Forward declare
+			local hasFired = false -- Extra safeguard to prevent multiple firings
 
 			-- Function to clean up the flag and connections
 			local function cleanup()
@@ -193,14 +194,24 @@ function Core:run(): Promise.Promise
 			
 			-- Use PreSimulation
 			simConnection = RunService.PreSimulation:Connect(function()
-				if sentNotification then 
+				-- Double safeguard using both flags
+				if sentNotification or hasFired then 
 					-- Already fired, disconnect if somehow still connected
-					if simConnection then simConnection:Disconnect() simConnection = nil cleanup() end 
+					if simConnection then 
+						simConnection:Disconnect() 
+						simConnection = nil 
+						cleanup()
+					end 
 					return 
 				end
-
-				task.wait(0.5) 
+				
+				-- Set both flags immediately to prevent race conditions
 				sentNotification = true
+				hasFired = true
+				
+				-- Wait after setting flags
+				task.wait(0.5) 
+				
 				-- Use the EXACT format expected by the CLI server
 				print("[GAME START DETECTOR] Game is running, firing event...")
 				gameStartedEvent:Fire()
