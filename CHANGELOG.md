@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.0.5] - 2025-04-09
+
+### Fixed
+- Fixed game start detection script to prevent multiple event firings
+- Corrected log message format for CLI server detection, ensuring logs clear properly on game start
+- Removed debug/development logs for production release
+
 ## [0.0.4] - 2024-04-09
 
 ### Fixed
