@@ -68,11 +68,11 @@ function Log.__setLevel(level: string)
 end
 
 -- In production, trace and debug do nothing
-function Log.trace(...: any)
+function Log.trace()
 	-- No-op in production
 end
 
-function Log.debug(...: any)
+function Log.debug()
 	-- No-op in production
 end
 

@@ -1,5 +1,4 @@
 local Argon = script:FindFirstAncestor("Argon")
-local RunService = game:GetService("RunService")
 
 local Promise = require(Argon.Packages.Promise)
 
