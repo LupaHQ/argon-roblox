@@ -67,16 +67,13 @@ function Log.__setLevel(level: string)
 	Log.__level = num
 end
 
+-- In production, trace and debug do nothing
 function Log.trace(...: any)
-	if Log.__level >= Log.Level.Trace then
-		print("TRACE:" .. format(...))
-	end
+	-- No-op in production
 end
 
 function Log.debug(...: any)
-	if Log.__level >= Log.Level.Debug then
-		print("DEBUG:" .. format(...))
-	end
+	-- No-op in production
 end
 
 function Log.info(...: any)
@@ -115,8 +112,6 @@ function Log.__sendLog(message: string, level: string)
 	end -- Filter here too
 
 	if not App or not App.current then
-		-- Print to output if App is not available
-		print("[ARGON LOG] " .. message)
 		return
 	end
 

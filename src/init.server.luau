@@ -39,7 +39,6 @@ local Log = require(script.Log)
 local App = require(script.App)
 
 Config.load()
-Log.debug("[ARGON DEBUG] Initializing plugin... Version: 2.0.25")
 Log.__setLevel(Config:get("LogLevel"))
 
 -- Initialize the App (UI) and store it in the App.current global
@@ -64,11 +63,6 @@ LogService.MessageOut:Connect(function(message, messageType)
 			logLevel = "ERROR"
 		end
 		App.current:sendLog(message, logLevel)
-	else
-		-- Add a simple action in the else block to avoid empty else warning
-		if Log.__level >= 5 then -- Only in trace mode
-			print("[LOG_TRACE] App not ready for message: " .. message:sub(1, 30) .. "...")
-		end
 	end
 end)
 

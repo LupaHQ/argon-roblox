@@ -140,22 +140,9 @@ function Core:run(): Promise.Promise
 		-- Set up run state detection with the most reliable approach
 		Log.info("[GameStartDetection] Setting up game start detection...")
 
-		-- Initial diagnostic
-		Log.warn(
-			"[DEBUG] Initial RunService state - IsRunning: "
-				.. tostring(RunService:IsRunning())
-				.. ", IsStudio: "
-				.. tostring(RunService:IsStudio())
-				.. ", IsServer: "
-				.. tostring(RunService:IsServer())
-		)
-
 		-- Check if a detector script already exists and remove it
-		Log.warn("[GameStartDetection] Checking for existing detector script...") -- Log check
 		local existingScript = game:GetService("ServerScriptService"):FindFirstChild("GameStartDetector")
-		Log.warn("[GameStartDetection] FindFirstChild result:", existingScript) -- Log result
 		if existingScript then
-			Log.warn("[GameStartDetection] Found existing detector script, removing it first")
 			existingScript:Destroy()
 		end
 
@@ -180,10 +167,8 @@ function Core:run(): Promise.Promise
 
 			-- Function to clean up the flag and connections
 			local function cleanup()
-				print("[GAME START DETECTOR SCRIPT] Cleanup called.")
 				local flag = ServerStorage:FindFirstChild(FLAG_NAME)
 				if flag then
-					print("[GAME START DETECTOR SCRIPT] Destroying flag.")
 					flag:Destroy()
 				end
 				if cleanupConnection then
@@ -194,13 +179,11 @@ function Core:run(): Promise.Promise
 
 			-- Singleton Check
 			if ServerStorage:FindFirstChild(FLAG_NAME) then
-				print("[GAME START DETECTOR SCRIPT] Another detector is already running (flag exists). Exiting script.")
 				script:Destroy() -- Destroy this redundant script instance
 				return
 			end
 
 			-- Create and set the flag
-			print("[GAME START DETECTOR SCRIPT] Creating singleton flag.")
 			local runningFlag = Instance.new("BoolValue")
 			runningFlag.Name = FLAG_NAME
 			runningFlag.Parent = ServerStorage
@@ -208,8 +191,6 @@ function Core:run(): Promise.Promise
 			local sentNotification = false
 			local simConnection
 			
-			print("[GAME START DETECTOR SCRIPT] Initializing detection using PreSimulation. sentNotification=", sentNotification)
-
 			-- Use PreSimulation
 			simConnection = RunService.PreSimulation:Connect(function()
 				if sentNotification then 
@@ -219,14 +200,13 @@ function Core:run(): Promise.Promise
 				end
 
 				task.wait(0.5) 
-				print("[GAME START DETECTOR SCRIPT] Waited 0.5s. Setting sentNotification=true")
 				sentNotification = true
-				print("[GAME START DETECTOR SCRIPT] Game is running, firing event...")
+				-- Use the EXACT format expected by the CLI server
+				print("[GAME START DETECTOR] Game is running, firing event...")
 				gameStartedEvent:Fire()
 				
 				-- Disconnect and cleanup *after* firing
 				if simConnection then
-					print("[GAME START DETECTOR SCRIPT] Disconnecting PreSimulation connection after fire.")
 					simConnection:Disconnect()
 					simConnection = nil
 					cleanup() -- Explicitly call cleanup after firing
@@ -235,102 +215,59 @@ function Core:run(): Promise.Promise
 
 			-- Clean up when script is destroyed
 			cleanupConnection = script.Destroying:Connect(function()
-				print("[GAME START DETECTOR SCRIPT] Destroying event triggered. Cleaning up...")
 				if simConnection then
 					simConnection:Disconnect()
 					simConnection = nil
 				end
 				cleanup() -- Call cleanup on destroy
 			end)
-
-			print("[GAME START DETECTOR SCRIPT] Detection setup complete.")
 		]]
 
 		serverDetectionScript.Parent = game:GetService("ServerScriptService")
 
 		-- Connect to the event
 		local eventConnection = gameStartedEvent.Event:Connect(function()
-			Log.warn(
-				"[DEBUG] 🎮 Game start detected via server script's BindableEvent. Marker log should have been sent."
-			)
-
-			-- Send the game started event to the server
+			-- Set the flag but don't take any special action
 			if not self.alreadySentGameStarted then
 				self.alreadySentGameStarted = true
-				self.client:sendGameStartedEvent():catch(function(err)
-					Log.warn("[DEBUG] ❌ Failed to send game started event:", err)
-					self.alreadySentGameStarted = false
-				end)
 			end
 		end)
 
-		-- Also try direct RunState monitoring as backup (remove send event call)
+		-- Also try direct RunState monitoring as backup
 		local runStateConnection = RunService:GetPropertyChangedSignal("RunState"):Connect(function()
 			if self.status ~= Core.Status.Connected then
 				return
 			end
 
-			Log.warn("[DEBUG] 🔄 RunState changed to: " .. tostring(RunService.RunState))
-
-			-- Check if we should try sending the event again
+			-- Just set the flag when game is running
 			if RunService:IsRunning() and not self.alreadySentGameStarted then
-				Log.warn("[DEBUG] 🔄 Game is now running, attempting to send game started event...")
 				self.alreadySentGameStarted = true
-				self.client:sendGameStartedEvent():catch(function(err)
-					Log.warn("[DEBUG] ❌ Failed to send game started event:", err)
-					self.alreadySentGameStarted = false
-				end)
 			end
 		end)
 
 		-- Cleanup function
 		local function cleanupDetection()
-			Log.warn("--- cleanupDetection CALLED ---") -- Log cleanup call
 			if serverDetectionScript and serverDetectionScript.Parent then
-				Log.warn("[GameStartDetection] cleanup: Destroying serverDetectionScript:", serverDetectionScript)
 				serverDetectionScript:Destroy()
 			end
 			if eventConnection then
-				Log.warn("[GameStartDetection] cleanup: Disconnecting eventConnection:", eventConnection)
 				eventConnection:Disconnect()
 			end
 
 			-- Failsafe: Remove the singleton flag if it exists
 			local flag = game:GetService("ServerStorage"):FindFirstChild("_ARGON_GAME_START_RUNNING")
 			if flag then
-				Log.warn("[GameStartDetection] cleanup: Failsafe - Removing singleton flag:", flag)
 				flag:Destroy()
 			end
 
 			self.alreadySentGameStarted = false
 		end
 
-		-- Variable to track game start state
-		-- local alreadySentGameStarted = false -- Remove this local declaration
-
-		-- Diagnostic monitoring thread
-		local debugConnection = task.spawn(function()
-			while self.status == Core.Status.Connected do
-				task.wait(5) -- Check every 5 seconds
-				Log.debug(
-					"[GameStartDetection] Status: hasStarted="
-						.. tostring(self.alreadySentGameStarted)
-						.. ", isRunning="
-						.. tostring(RunService:IsRunning())
-				)
-			end
-		end)
-
 		-- Add to connections for cleanup
 		table.insert(self.connections, {
 			Disconnect = cleanupDetection,
 		})
 		table.insert(self.connections, runStateConnection)
-		table.insert(self.connections, {
-			Disconnect = function()
-				task.cancel(debugConnection)
-			end,
-		})
 
 		self:__startSyncbackLoop():catch(function(err)
 			return reject(err)
@@ -341,7 +278,6 @@ function Core:run(): Promise.Promise
 end
 
 function Core:stop()
-	Log.warn("--- Core:stop CALLED ---") -- Log stop call
 	Log.trace("Stopping Argon core..")
 
 	self.status = Core.Status.Disconnecting
@@ -351,7 +287,7 @@ function Core:stop()
 	if self.client.isSubscribed then
 		task.spawn(function()
 			self.client:unsubscribe():catch(function(err)
-				Log.debug("Failed to unsubscribe from the server", err)
+				Log.info("Failed to unsubscribe from the server:", err)
 			end)
 		end)
 	end
@@ -615,6 +551,26 @@ function Core:__shouldPrompt(initial: boolean?): boolean
 	else
 		return false
 	end
+end
+
+function Core:openInEditor(path: string): Promise.Promise
+	if not Config:get("OpenInEditor") then
+		return Promise.resolve()
+	end
+
+	return Promise.new(function(resolve, reject)
+		self.client
+			:postJson("/edit", {
+				path = path,
+			})
+			:andThen(function(response)
+				resolve(response)
+			end)
+			:catch(function(err)
+				Log.info("Failed to open document in editor:", err)
+				reject(err)
+			end)
+	end)
 end
 
 return Core

@@ -4,11 +4,6 @@ local LogService = game:GetService("LogService")
 
 local plugin = script:FindFirstAncestorWhichIsA("Plugin")
 
-print(
-	"[ARGON DEBUG] Hello from the past! Plugin version:",
-	require(script:FindFirstAncestor("Argon").manifest).package.version
-)
-
 local Argon = script:FindFirstAncestor("Argon")
 local Packages = Argon.Packages
 local Helpers = Argon.Helpers
@@ -381,7 +376,6 @@ function App:connect()
 
 			while choice == "Diff" do
 				warn("This feature is not yet implemented!")
-				print("You can see raw changes here:", changes)
 				choice = signal:Wait()
 			end
 

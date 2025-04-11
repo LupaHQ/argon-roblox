@@ -143,49 +143,6 @@ function Client:sendLog(logData: { timestamp: number, message: string, type: str
 	})
 end
 
-function Client:sendGameStartedEvent(): Promise.Promise
-	Log.warn("[DEBUG] ⚠️ GAME_STARTED_EVENT: Sending clear logs request to server")
-
-	local url = self:getUrl("log/game_started")
-	local startTime = os.clock()
-
-	Log.warn("[DEBUG] 🌐 Server endpoint URL: " .. url)
-
-	-- Add more detailed debugging and error handling
-	return Http.post(url, {
-		clientId = self.clientId,
-		timestamp = os.time(),
-		metadata = {
-			isRunning = RunService:IsRunning(),
-			time = os.time(),
-			placeId = game.PlaceId,
-			placeName = game.Name,
-			sent_at = os.date("%Y-%m-%d %H:%M:%S"),
-		},
-	})
-		:andThen(function(response)
-			local elapsed = os.clock() - startTime
-			Log.warn(
-				"[DEBUG] ✅ LOG CLEAR SUCCESS: Server responded in "
-					.. string.format("%.3f", elapsed)
-					.. "s - Response: "
-					.. tostring(response.body or "none")
-			)
-			return response
-		end)
-		:catch(function(err)
-			local elapsed = os.clock() - startTime
-			Log.warn(
-				"[DEBUG] ❌ LOG CLEAR FAILED: Server request failed after "
-					.. string.format("%.3f", elapsed)
-					.. "s - Error: "
-					.. tostring(err)
-			)
-
-			return Promise.reject(err)
-		end)
-end
-
 function Client:open(instance: Types.Ref, line: number): Promise.Promise
 	Log.trace("Client request: open")
 
