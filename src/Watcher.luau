@@ -1,7 +1,8 @@
 --!strict
 local CollectionService = game:GetService("CollectionService")
 
-local Argon = script:FindFirstAncestor("Argon")
+local Argon = script:FindFirstAncestor("Lemonade")
+
 
 local Signal = require(Argon.Packages.Signal)
 

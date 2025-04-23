@@ -1,7 +1,8 @@
 local ScriptEditorService = game:GetService("ScriptEditorService")
 local RunService = game:GetService("RunService")
 
-local Argon = script:FindFirstAncestor("Argon")
+local Argon = script:FindFirstAncestor("Lemonade")
+
 
 local Promise = require(Argon.Packages.Promise)
 
@@ -82,7 +83,6 @@ function Core.new(host: string?, port: string?)
 end
 
 function Core:run(): Promise.Promise
-	Log.warn("--- Core:run START ---") -- Log start of run
 	return Promise.new(function(_, reject)
 		self.status = Core.Status.Connecting
 		self.alreadySentGameStarted = false
