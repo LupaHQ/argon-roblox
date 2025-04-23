@@ -33,6 +33,7 @@ local FILTERED_MESSAGES = {
 	"log clear failed", -- Matches the failure message tag
 	"game start detected", -- Matches the detection message
 	"[debug]", -- Catch common debug prefixes
+	"[argon]", -- Filter any logs with [ARGON] prefix (case insensitive)
 }
 
 local function format(...: any): string

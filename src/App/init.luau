@@ -55,8 +55,6 @@ local Children = Fusion.Children
 local cleanup = Fusion.cleanup
 local peek = Fusion.peek
 
--- local RECONNECT_INTERVAL = Config:get("ReconnectInterval") or 5 -- Removed incorrect config get
-
 local App = {}
 App.__index = App
 
@@ -335,7 +333,6 @@ function App:connect()
 	local canceled = false
 	local loading = true
 
-	self:sendLog(string.format("[ARGON] Attempting to connect to server at %s:%d...", self.host, self.port), "INFO") -- This log won't send yet
 	self.core = Core.new(self.host, self.port)
 
 	task.spawn(function()
@@ -413,8 +410,7 @@ function App:connect()
 		self.lastSync:set(os.time())
 		self.lastSyncKind:set(Config:get("InitialSyncPriority"))
 
-		self.isServerConnected:set(true) -- <<< SET CONNECTED STATE HERE
-		self:sendLog("[ARGON] Successfully connected to server and initialized project", "INFO")
+		self.isServerConnected:set(true)
 
 		self:setPage(Connected {
 			App = self,
@@ -432,26 +428,20 @@ function App:connect()
 				or "None"
 		)
 
-		self:sendLog(string.format("[ARGON] Sync event: %s", kind), "INFO")
-
 		if kind == "SyncDetails" then
 			project:set(data)
-			self:sendLog("[ARGON] Project details updated from sync", "INFO")
 		end
 	end)
 
 	self.core:run():catch(function(err)
 		loading = false
-		self.isServerConnected:set(false) -- <<< SET DISCONNECTED STATE HERE
+		self.isServerConnected:set(false)
 
 		if Core.wasExitGraceful(err) or canceled then
-			self:sendLog("[ARGON] Connection closed gracefully", "INFO") -- This won't send
-			self:disconnect() -- disconnect already sets state to false
+			self:disconnect()
 			self:home()
 			return
 		end
-
-		self:sendLog(string.format("[ARGON] Connection error: %s", err.message or tostring(err)), "ERROR") -- This won't send
 
 		self:setPage(Error {
 			App = self,
@@ -460,13 +450,12 @@ function App:connect()
 
 		self:setIcon("Error")
 
-		self:disconnect() -- disconnect already sets state to false
+		self:disconnect()
 
 		if Config:get("AutoReconnect") then
-			task.wait(5) -- Using hardcoded 5 for now, maybe make this configurable?
+			task.wait(5)
 
 			if self.lastUpdate + 5 <= os.clock() then
-				self:sendLog("[ARGON] Attempting to reconnect...", "INFO") -- This won't send
 				self:connect()
 			end
 		end
@@ -475,14 +464,11 @@ end
 
 function App:disconnect(cancel: boolean?)
 	self.lastUpdate = os.clock()
-	self.isServerConnected:set(false) -- <<< SET DISCONNECTED STATE HERE
+	self.isServerConnected:set(false)
 
 	if self.core then
 		if cancel then
 			self.onCanceled:Fire()
-			self:sendLog("[ARGON] Connection canceled by user", "INFO") -- This won't send
-		else
-			self:sendLog("[ARGON] Disconnecting from server", "INFO") -- This won't send
 		end
 
 		self.core:stop()

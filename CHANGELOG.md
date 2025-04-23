@@ -14,6 +14,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   - Enabled "Only Code Mode" by default to only sync script changes
   - Kept "Live Hydrate" enabled by default
 
+### Fixed
+- Removed internal [ARGON] logs to keep lemonlogs.txt clean from plugin operational messages
+
 ## [0.0.5] - 2025-04-09
 
 ### Fixed
