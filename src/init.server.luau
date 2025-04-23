@@ -13,7 +13,7 @@ if RunService:IsRunning() then
 	-- local App = require(script.App) -- App wouldn't be fully initialized here
 	
 	Config.load()
-	Log.debug("[ARGON] Plugin initialized in running mode - version 2.0.25")
+	Log.debug("[ARGON] Plugin initialized in running mode - version 0.0.6")
 	Log.__setLevel(Config:get("LogLevel"))
 	
 	-- Still capture logs when running
