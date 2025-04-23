@@ -35,7 +35,7 @@ type Config = {
 }
 
 local DEFAULTS = {
-	InitialSyncPriority = "Server",
+	InitialSyncPriority = "Global",
 	Host = "localhost",
 	Port = 8000,
 	AutoConnect = true,
@@ -44,7 +44,7 @@ local DEFAULTS = {
 	KeepUnknowns = false,
 	TwoWaySync = true,
 	SyncbackProperties = false,
-	OnlyCodeMode = true,
+	OnlyCodeMode = false,
 	OpenInEditor = false,
 	DisplayPrompts = "Always",
 	ChangesThreshold = 5,
