@@ -6,16 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+<<<<<<< HEAD
 [Unreleased]: https://github.com/LupaHQ/argon-roblox/compare/0.0.7...HEAD
 
 ## [0.0.7] - 2025-04-27
+=======
+[Unreleased]: https://github.com/LupaHQ/argon-roblox/compare/0.0.26...HEAD
+
+## [0.0.26] - 2025-04-27
+>>>>>>> fbf7fdc7706bbec92886c0b1b231c0613dc8fda4
 
 ### Changed
 
 - Renamed plugin artifact from "Argon.rbxm" to "Lemonade.rbxm" for brand consistency
 - Updated project configuration and workflow to use the new filename
+<<<<<<< HEAD
 
 [0.0.7]: https://github.com/LupaHQ/argon-roblox/compare/0.0.6...0.0.7
+=======
+- Synchronized version number with other Argon components
+
+[0.0.26]: https://github.com/LupaHQ/argon-roblox/compare/0.0.6...0.0.26
+>>>>>>> fbf7fdc7706bbec92886c0b1b231c0613dc8fda4
 
 ## [0.0.6] - 2024-04-24
 
