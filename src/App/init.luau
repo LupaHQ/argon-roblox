@@ -4,7 +4,8 @@ local LogService = game:GetService("LogService")
 
 local plugin = script:FindFirstAncestorWhichIsA("Plugin")
 
-local Argon = script:FindFirstAncestor("Argon")
+local Argon = script:FindFirstAncestor("Lemonade")
+
 local Packages = Argon.Packages
 local Helpers = Argon.Helpers
 
@@ -38,7 +39,7 @@ local List = require(Components.List)
 local NotConnected = require(Pages.NotConnected)
 local Connecting = require(Pages.Connecting)
 local Connected = require(Pages.Connected)
-local Unavailable = require(Pages.Unavailable)
+-- local Unavailable = require(Pages.Unavailable)
 local Prompt = require(Pages.Prompt)
 local Error = require(Pages.Error)
 
@@ -148,7 +149,7 @@ function App.new()
 			self:connect()
 		end
 	else
-		self:setPage(Unavailable())
+		-- self:setPage(Unavailable()) -- Commented out to prevent showing during playtest
 	end
 
 	-- Setup log listener here to access self

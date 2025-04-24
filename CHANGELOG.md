@@ -6,9 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+[Unreleased]: https://github.com/LupaHQ/argon-roblox/compare/0.0.8...HEAD
+
+## [0.0.8] - 2024-08-19
+
+### Changed
+
+- Various internal improvements and code refactoring.
+
+[0.0.8]: https://github.com/LupaHQ/argon-roblox/compare/0.0.7...0.0.8
+
+## [0.0.7] - 2025-04-27
+
+### Changed
+
+- Renamed plugin artifact from "Argon.rbxm" to "Lemonade.rbxm" for brand consistency
+- Updated project configuration and workflow to use the new filename
+
+[0.0.7]: https://github.com/LupaHQ/argon-roblox/compare/0.0.6...0.0.7
+
 ## [0.0.6] - 2024-04-24
 
 ### Changed
+
 - Updated default configuration settings:
   - Set "Initial Sync Priority" to "Server" as default
   - Enabled "Only Code Mode" by default to only sync script changes
@@ -20,6 +40,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## [0.0.5] - 2025-04-09
 
 ### Fixed
+
 - Fixed game start detection script to prevent multiple event firings
 - Corrected log message format for CLI server detection, ensuring logs clear properly on game start
 - Removed debug/development logs for production release
@@ -27,6 +48,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## [0.0.4] - 2024-04-09
 
 ### Fixed
+
 - Implemented singleton pattern for GameStartDetector script to prevent multiple instances and log spam.
 
 ## [0.0.3] - 2024-04-09
