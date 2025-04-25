@@ -1,7 +1,6 @@
 --!strict
 local Argon = script:FindFirstAncestor("Lemonade")
 
-
 local Types = require(Argon.Types)
 
 return function(): Types.Ref

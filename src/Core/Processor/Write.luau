@@ -2,7 +2,6 @@ local ChangeHistoryService = game:GetService("ChangeHistoryService")
 
 local Argon = script:FindFirstAncestor("Lemonade")
 
-
 local Dom = require(Argon.Dom)
 local Log = require(Argon.Log)
 local Types = require(Argon.Types)

@@ -1,7 +1,6 @@
 --!strict
 local Argon = script:FindFirstAncestor("Lemonade")
 
-
 local Util = require(Argon.Util)
 
 local function fuzzy(a: number, b: number): boolean

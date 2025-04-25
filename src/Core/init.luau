@@ -3,7 +3,6 @@ local RunService = game:GetService("RunService")
 
 local Argon = script:FindFirstAncestor("Lemonade")
 
-
 local Promise = require(Argon.Packages.Promise)
 
 local Client = require(Argon.Client)
@@ -137,8 +136,11 @@ function Core:run(): Promise.Promise
 
 		Log.trace("Starting sync loops..")
 
-		-- Set up run state detection with the most reliable approach
+		-- Set up run state detection with server script (required because plugins don't run during game execution)
 		Log.info("[GameStartDetection] Setting up game start detection...")
+
+		-- Reset detection flag
+		self.alreadySentGameStarted = false
 
 		-- Check if a detector script already exists and remove it
 		local existingScript = game:GetService("ServerScriptService"):FindFirstChild("GameStartDetector")
@@ -146,138 +148,52 @@ function Core:run(): Promise.Promise
 			existingScript:Destroy()
 		end
 
-		-- Create a script to run in the server context
-		-- This is important because plugin scripts run in a separate context that may not get the proper RunService events
+		-- Create a simple script to run in the server context
 		local serverDetectionScript = Instance.new("Script")
 		serverDetectionScript.Name = "GameStartDetector"
 
-		-- This script will fire a BindableEvent when the game starts running
-		local gameStartedEvent = Instance.new("BindableEvent")
-		gameStartedEvent.Name = "GameStartedEvent"
-		gameStartedEvent.Parent = serverDetectionScript
-
-		-- Set up the code for the server script
+		-- This script needs to run in the game context to print the marker that the server watches for
 		serverDetectionScript.Source = [[
+			-- Simple game start detector
 			local RunService = game:GetService("RunService")
-			local ServerStorage = game:GetService("ServerStorage")
-			local gameStartedEvent = script:WaitForChild("GameStartedEvent")
 			
-			local FLAG_NAME = "_ARGON_GAME_START_RUNNING"
-			local cleanupConnection -- Forward declare
-			local hasFired = false -- Extra safeguard to prevent multiple firings
-
-			-- Function to clean up the flag and connections
-			local function cleanup()
-				local flag = ServerStorage:FindFirstChild(FLAG_NAME)
-				if flag then
-					flag:Destroy()
-				end
-				if cleanupConnection then
-					cleanupConnection:Disconnect()
-					cleanupConnection = nil
-				end
-			end
-
-			-- Singleton Check
-			if ServerStorage:FindFirstChild(FLAG_NAME) then
-				script:Destroy() -- Destroy this redundant script instance
-				return
-			end
-
-			-- Create and set the flag
-			local runningFlag = Instance.new("BoolValue")
-			runningFlag.Name = FLAG_NAME
-			runningFlag.Parent = ServerStorage
-
-			local sentNotification = false
-			local simConnection
+			-- CRITICAL: This EXACT message is detected by the Argon server
+			-- Print immediately as first priority to ensure it appears before other logs
+			print("[GAME START DETECTOR] Game is running, firing event...")
 			
-			-- Use PreSimulation
-			simConnection = RunService.PreSimulation:Connect(function()
-				-- Double safeguard using both flags
-				if sentNotification or hasFired then 
-					-- Already fired, disconnect if somehow still connected
-					if simConnection then 
-						simConnection:Disconnect() 
-						simConnection = nil 
-						cleanup()
-					end 
-					return 
-				end
-				
-				-- Set both flags immediately to prevent race conditions
-				sentNotification = true
-				hasFired = true
-				
-				-- Wait after setting flags
-				task.wait(0.5) 
-				
-				-- Use the EXACT format expected by the CLI server
+			-- Also use PreRender as an ultra-early event to ensure it runs before other scripts
+			-- This serves as backup in case the initial print is delayed
+			RunService.PreRender:Connect(function()
 				print("[GAME START DETECTOR] Game is running, firing event...")
-				gameStartedEvent:Fire()
-				
-				-- Disconnect and cleanup *after* firing
-				if simConnection then
-					simConnection:Disconnect()
-					simConnection = nil
-					cleanup() -- Explicitly call cleanup after firing
-				end
-			end)
-
-			-- Clean up when script is destroyed
-			cleanupConnection = script.Destroying:Connect(function()
-				if simConnection then
-					simConnection:Disconnect()
-					simConnection = nil
-				end
-				cleanup() -- Call cleanup on destroy
+				-- Only need to fire once
+				script:Destroy()
 			end)
 		]]
 
-		serverDetectionScript.Parent = game:GetService("ServerScriptService")
+		-- Set highest priority to run before other scripts
+		serverDetectionScript.RunContext = Enum.RunContext.Server
 
-		-- Connect to the event
-		local eventConnection = gameStartedEvent.Event:Connect(function()
-			-- Set the flag but don't take any special action
-			if not self.alreadySentGameStarted then
-				self.alreadySentGameStarted = true
-			end
-		end)
+		-- Move to the beginning of ServerScriptService to help with load order
+		if game:GetService("ServerScriptService"):FindFirstChildOfClass("Script") then
+			serverDetectionScript.Parent = game:GetService("ServerScriptService")
+			serverDetectionScript:JoinToStart()
+		else
+			serverDetectionScript.Parent = game:GetService("ServerScriptService")
+		end
 
-		-- Also try direct RunState monitoring as backup
+		-- Fallback detection using RunService in the plugin
 		local runStateConnection = RunService:GetPropertyChangedSignal("RunState"):Connect(function()
 			if self.status ~= Core.Status.Connected then
 				return
 			end
 
-			-- Just set the flag when game is running
+			-- Just set the flag when game is running (but don't print from plugin)
 			if RunService:IsRunning() and not self.alreadySentGameStarted then
+				Log.info("[GameStartDetection] Game is running, detected via RunState change!")
 				self.alreadySentGameStarted = true
 			end
 		end)
 
-		-- Cleanup function
-		local function cleanupDetection()
-			if serverDetectionScript and serverDetectionScript.Parent then
-				serverDetectionScript:Destroy()
-			end
-			if eventConnection then
-				eventConnection:Disconnect()
-			end
-
-			-- Failsafe: Remove the singleton flag if it exists
-			local flag = game:GetService("ServerStorage"):FindFirstChild("_ARGON_GAME_START_RUNNING")
-			if flag then
-				flag:Destroy()
-			end
-
-			self.alreadySentGameStarted = false
-		end
-
-		-- Add to connections for cleanup
-		table.insert(self.connections, {
-			Disconnect = cleanupDetection,
-		})
 		table.insert(self.connections, runStateConnection)
 
 		self:__startSyncbackLoop():catch(function(err)

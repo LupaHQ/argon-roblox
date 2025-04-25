@@ -2,7 +2,6 @@
 
 local Argon = script:FindFirstAncestor("Lemonade")
 
-
 local Types = require(Argon.Types)
 
 local Tree = {}

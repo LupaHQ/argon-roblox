@@ -6,7 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
-[Unreleased]: https://github.com/LupaHQ/argon-roblox/compare/0.0.8...HEAD
+[Unreleased]: https://github.com/LupaHQ/argon-roblox/compare/0.0.9...HEAD
+
+## [0.0.9] - 2024-08-22
+
+### Fixed
+
+- Improved game start detection to make it more reliable
+- Ensured game start marker prints before other scripts' output
+- Added redundancy in game start detection to prevent race conditions
+- Made server script start earlier in execution order to avoid log cutoff issues
+
+[0.0.9]: https://github.com/LupaHQ/argon-roblox/compare/0.0.8...0.0.9
 
 ## [0.0.8] - 2024-08-19
 

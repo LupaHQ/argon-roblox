@@ -1,7 +1,6 @@
 --!strict
 local Argon = script:FindFirstAncestor("Lemonade")
 
-
 local Log = require(Argon.Log)
 
 type ExecutorImpl = {

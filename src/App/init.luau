@@ -110,7 +110,7 @@ function App.new()
 
 	local toolbarButton = ToolbarButton {
 		Toolbar = Toolbar {
-			Name = "Dervex Tools",
+			Name = "Lemonade Labs",
 		},
 		Name = "Lemonade",
 		ToolTip = "Open Lemonade UI",

@@ -1,6 +1,5 @@
 local Argon = script:FindFirstAncestor("Lemonade")
 
-
 local Fusion = require(Argon.Packages.Fusion)
 
 local New = Fusion.New

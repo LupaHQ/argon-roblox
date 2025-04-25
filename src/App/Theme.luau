@@ -3,7 +3,6 @@ local Studio = settings().Studio
 
 local Argon = script:FindFirstAncestor("Lemonade")
 
-
 local Fusion = require(Argon.Packages.Fusion)
 
 local Value = Fusion.Value
