@@ -142,44 +142,46 @@ function Core:run(): Promise.Promise
 		-- Reset detection flag
 		self.alreadySentGameStarted = false
 
-		-- Check if a detector script already exists and remove it
-		local existingScript = game:GetService("ServerScriptService"):FindFirstChild("GameStartDetector")
-		if existingScript then
-			existingScript:Destroy()
+		-- Cleanup any existing detectors
+		for _, name in { "_ARGON_GAME_START", "GameStartDetector", "GameStartDetector_SSS", "_ARGON_CENTRAL_PRINTER" } do
+			local existing = game:FindFirstChild(name)
+			if existing then
+				existing:Destroy()
+			end
+
+			local existingSSS = game:GetService("ServerScriptService"):FindFirstChild(name)
+			if existingSSS then
+				existingSSS:Destroy()
+			end
 		end
 
-		-- Create a simple script to run in the server context
-		local serverDetectionScript = Instance.new("Script")
-		serverDetectionScript.Name = "GameStartDetector"
-
-		-- This script needs to run in the game context to print the marker that the server watches for
-		serverDetectionScript.Source = [[
-			-- Simple game start detector
-			local RunService = game:GetService("RunService")
+		-- Create a single detector script with highest priority
+		local detector = Instance.new("Script")
+		detector.Name = "_ARGON_GAME_START"
+		detector.Source = [[
+			-- CRITICAL: Only execute this code once per server
+			if _G._ARGON_MARKER_PRINTED then
+				script:Destroy()
+				return
+			end
 			
-			-- CRITICAL: This EXACT message is detected by the Argon server
-			-- Print immediately as first priority to ensure it appears before other logs
+			-- Mark as executed immediately
+			_G._ARGON_MARKER_PRINTED = true
+			
+			-- CRITICAL: This exact message pattern is detected by the Argon server
 			print("[GAME START DETECTOR] Game is running, firing event...")
 			
-			-- Also use PreRender as an ultra-early event to ensure it runs before other scripts
-			-- This serves as backup in case the initial print is delayed
-			RunService.PreRender:Connect(function()
-				print("[GAME START DETECTOR] Game is running, firing event...")
-				-- Only need to fire once
-				script:Destroy()
-			end)
+			-- Create marker for debugging purposes
+			local marker = Instance.new("BoolValue")
+			marker.Name = "_ARGON_DETECTOR_RAN"
+			marker.Value = true
+			marker.Parent = game
+			
+			-- Clean up
+			script:Destroy()
 		]]
-
-		-- Set highest priority to run before other scripts
-		serverDetectionScript.RunContext = Enum.RunContext.Server
-
-		-- Move to the beginning of ServerScriptService to help with load order
-		if game:GetService("ServerScriptService"):FindFirstChildOfClass("Script") then
-			serverDetectionScript.Parent = game:GetService("ServerScriptService")
-			serverDetectionScript:JoinToStart()
-		else
-			serverDetectionScript.Parent = game:GetService("ServerScriptService")
-		end
+		detector.RunContext = Enum.RunContext.Server
+		detector.Parent = game
 
 		-- Fallback detection using RunService in the plugin
 		local runStateConnection = RunService:GetPropertyChangedSignal("RunState"):Connect(function()
