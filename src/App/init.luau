@@ -39,7 +39,7 @@ local List = require(Components.List)
 local NotConnected = require(Pages.NotConnected)
 local Connecting = require(Pages.Connecting)
 local Connected = require(Pages.Connected)
--- local Unavailable = require(Pages.Unavailable)
+local Unavailable = require(Pages.Unavailable)
 local Prompt = require(Pages.Prompt)
 local Error = require(Pages.Error)
 
@@ -149,7 +149,7 @@ function App.new()
 			self:connect()
 		end
 	else
-		-- self:setPage(Unavailable()) -- Commented out to prevent showing during playtest
+		self:setPage(Unavailable())
 	end
 
 	-- Setup log listener here to access self

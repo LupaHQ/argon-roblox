@@ -24,7 +24,7 @@ return function(): Frame
 	local absoluteSize = Value(Vector2.zero)
 
 	return Box {
-		Size = UDim2.new(1, 0, 0, Theme.CompSizeY.Large * 2),
+		Size = UDim2.new(1, 0, 0, Theme.CompSizeY.Large * 1),
 
 		[OnChange "AbsoluteSize"] = function(size)
 			absoluteSize:set(size)
@@ -33,7 +33,7 @@ return function(): Frame
 		[Children] = {
 			Padding {},
 			Text {
-				Text = "Unavailable during playtest! Return to the edit mode to continue using Argon",
+				Text = "Lemonade is running and syncing files!",
 				TextWrapped = true,
 				Font = Theme.Fonts.Mono,
 				TextSize = Theme.TextSize.Medium,
