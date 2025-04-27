@@ -8,6 +8,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 [Unreleased]: https://github.com/LupaHQ/argon-roblox/compare/0.0.9...HEAD
 
+## [0.0.10] - 2024-09-06
+
+### Fixed
+
+- Set default `AutoReconnect` to `true` to improve connection reliability on Windows by mitigating server startup timing issues.
+- Set default `OnlyCodeMode` to `true`.
+
 ## [0.0.9] - 2024-08-22
 
 ### Fixed
@@ -46,6 +53,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   - Kept "Live Hydrate" enabled by default
 
 ### Fixed
+
 - Removed internal [ARGON] logs to keep lemonlogs.txt clean from plugin operational messages
 
 ## [0.0.5] - 2025-04-09
