@@ -6,7 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
-[Unreleased]: https://github.com/LupaHQ/argon-roblox/compare/0.0.9...HEAD
+## [0.0.10] - 2025-04-27
+
+[unreleased]: https://github.com/LupaHQ/argon-roblox/compare/0.0.10...HEAD
+[0.0.10]: https://github.com/LupaHQ/argon-roblox/compare/0.0.9...0.0.10
 
 ## [0.0.10] - 2024-09-06
 
