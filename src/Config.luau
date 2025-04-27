@@ -35,11 +35,11 @@ type Config = {
 }
 
 local DEFAULTS = {
-	InitialSyncPriority = "Global",
+	InitialSyncPriority = "Server",
 	Host = "localhost",
 	Port = 8000,
 	AutoConnect = true,
-	AutoReconnect = false,
+	AutoReconnect = true,
 	LiveHydrate = true,
 	KeepUnknowns = false,
 	TwoWaySync = true,
