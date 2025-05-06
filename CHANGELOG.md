@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.0.11] - 2025-05-06
+
 ## [0.0.11] - 2024-09-06
 
 ### Changed
@@ -356,7 +358,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - First Argon 2 plugin pre-release
 
-[unreleased]: https://github.com/LupaHQ/argon-roblox/compare/v0.0.3...HEAD
+[unreleased]: https://github.com/LupaHQ/argon-roblox/compare/0.0.11...HEAD
+[0.0.11]: https://github.com/LupaHQ/argon-roblox/compare/0.0.8...0.0.11
 [0.0.3]: https://github.com/LupaHQ/argon-roblox/compare/v0.0.2...v0.0.3
 [0.0.2]: https://github.com/LupaHQ/argon-roblox/compare/0.0.1...v0.0.2
 [0.0.1]: https://github.com/LupaHQ/argon-roblox/compare/2.0.17...0.0.1
